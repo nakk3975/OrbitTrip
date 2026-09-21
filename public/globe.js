@@ -3,6 +3,7 @@ import {land} from './world-land.js';
 import {projectSphere} from './globe-math.js';
 export function setupGlobe(onSelect){const canvas=document.querySelector('#globe'),ctx=canvas.getContext('2d');let mode='globe',lon=115,lat=22,selected='JP',hits=[],drag=null,moved=false,visible=true,zoom=1,panX=0,panY=0,queued=false,velocity=0,inertia=0;
  const tooltip=document.createElement('div');tooltip.className='map-country-tooltip';tooltip.hidden=true;tooltip.setAttribute('role','status');canvas.parentElement.append(tooltip);
+ const names=document.createElement('div');names.className='map-country-names';names.setAttribute('aria-hidden','true');canvas.parentElement.append(names);
  const halo=document.createElement('div');halo.className='map-hover-ring';halo.hidden=true;canvas.parentElement.append(halo);
  function clearHover(){tooltip.hidden=true;halo.hidden=true;canvas.style.cursor='grab';}
  function hitAt(x,y){const label=hits.find(h=>h.label&&x>=h.bx&&x<=h.bx+h.w&&y>=h.by&&y<=h.by+h.h);if(label)return label;let best=null,distance=22;for(const h of hits){const d=Math.hypot(x-h.x,y-h.y);if(d<distance){best=h;distance=d;}}return best;}
@@ -20,16 +21,16 @@ export function setupGlobe(onSelect){const canvas=document.querySelector('#globe
  function draw(){if(!visible)return;const [W,H]=size(),dpr=Math.min(window.devicePixelRatio||1,2);if(canvas.width!==W*dpr||canvas.height!==H*dpr){canvas.width=W*dpr;canvas.height=H*dpr;}ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);const cx=W/2,cy=H/2-8,R=255*zoom;
  if(mode==='globe'){raster();const g=ctx.createRadialGradient(cx,cy,R*.86,cx,cy,R*1.2);g.addColorStop(0,'#6e9bad00');g.addColorStop(.55,'#709acb16');g.addColorStop(1,'#709acb00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R*1.2,0,Math.PI*2);ctx.fill();ctx.drawImage(sphere,cx-R,cy-R,R*2,R*2);ctx.strokeStyle='#7695b22a';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(cx,cy,R+45,R*.35,-.35,0,Math.PI*2);ctx.stroke();}
  else{ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();ctx.strokeStyle='#47637d1a';ctx.lineWidth=.7;for(let lng=-180;lng<=180;lng+=30){const a=flatPoint(lng,-90),b=flatPoint(lng,90);ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();}for(let la=-60;la<=90;la+=30){ctx.beginPath();ctx.moveTo(...flatPoint(-180,la));ctx.lineTo(...flatPoint(180,la));ctx.stroke();}for(const polygon of land){ctx.beginPath();for(const ring of polygon){ring.forEach(([lng,la],i)=>{const p=flatPoint(lng,la);if(i)ctx.lineTo(...p);else ctx.moveTo(...p);});ctx.closePath();}ctx.fillStyle='#263c43';ctx.fill('evenodd');ctx.strokeStyle='#6f9d921f';ctx.lineWidth=.7;ctx.stroke();}ctx.restore();}
- hits=[];const labels=[];
+ hits=[];const labels=[];names.replaceChildren();
  const visibleCountries=countries.map(c=>{if(mode==='globe'){const p=projectSphere(c.lng,c.lat,lon,lat);return {c,x:cx+R*p[0],y:cy-R*p[1],z:p[2]};}const [x,y]=flatPoint(c.lng,c.lat);return {c,x,y,z:1};}).filter(p=>p.z>=.12&&p.x>=14&&p.x<=W-14&&p.y>=20&&p.y<=H-30).sort((a,b)=>(b.c.id===selected?1:0)-(a.c.id===selected?1:0)||Math.min(60,b.c.cities.length)*b.z-Math.min(60,a.c.cities.length)*a.z||a.c.id.localeCompare(b.c.id));
  const screen=canvas.getBoundingClientRect(),cssScale=Math.max(1,W/screen.width),fontSize=13*cssScale,leftEdge=Math.max(5,(12-screen.left)*W/screen.width),rightEdge=Math.min(W-5,(innerWidth-12-screen.left)*W/screen.width);
- const limit=Math.round((mode==='globe'?20:30)*Math.sqrt(zoom));
- for(const {c,x,y} of visibleCountries){const active=c.id===selected;ctx.font=(active?'600 ':'500 ')+fontSize+'px Arial';const w=ctx.measureText(c.name).width+12*cssScale,h=23*cssScale;
+ const limit=Math.round((screen.width<600?10:mode==='globe'?16:24)*Math.sqrt(zoom));
+ for(const {c,x,y} of visibleCountries){const active=c.id===selected;ctx.font=(active?'600 ':'400 ')+fontSize+'px '+getComputedStyle(canvas).fontFamily;const w=ctx.measureText(c.name).width+12*cssScale,h=23*cssScale;
  const offsets=[[8,-h/2],[-w-8,-h/2],[-w/2,10],[-w/2,-h-10]];let box=null;
  if(labels.length<limit)for(const [dx,dy] of offsets){const candidate={bx:x+dx,by:y+dy,w,h};if(candidate.bx<leftEdge||candidate.bx+w>rightEdge||candidate.by<5||candidate.by+h>H-15)continue;if(labels.some(b=>candidate.bx<b.bx+b.w+8&&candidate.bx+w+8>b.bx&&candidate.by<b.by+b.h+5&&candidate.by+h+5>b.by))continue;box=candidate;break;}
  const label=!!box,bx=box?.bx??x,by=box?.by??y;
- ctx.beginPath();ctx.arc(x,y,(active?3.5:2.2)*cssScale,0,Math.PI*2);ctx.fillStyle=active?'#ffc98b':'#c5dfcd';ctx.fill();
- if(label){labels.push(box);ctx.save();ctx.lineJoin='round';ctx.lineWidth=4*cssScale;ctx.strokeStyle='#101e26';ctx.strokeText(c.name,bx+6*cssScale,by+16*cssScale);ctx.fillStyle=active?'#ffe0b6':'#eef5e9';ctx.fillText(c.name,bx+6*cssScale,by+16*cssScale);ctx.restore();}
+ if(label||active){ctx.beginPath();ctx.arc(x,y,(active?3:1.7)*cssScale,0,Math.PI*2);ctx.fillStyle=active?'#efbd89':'#a9c5b3';ctx.fill();}
+ if(label){labels.push(box);const name=document.createElement('span');name.textContent=c.name;name.className=active?'selected':'';const parent=canvas.parentElement.getBoundingClientRect();name.style.left=(screen.left-parent.left+(bx+6*cssScale)/W*screen.width)+'px';name.style.top=(screen.top-parent.top+(by+4*cssScale)/H*screen.height)+'px';names.append(name);}
  hits.push({x,y,bx,by,w,h,c,label});
  }
  visibleButton.textContent=`이 화면의 국가·지역 ${hits.length}개 보기 ↗`;
