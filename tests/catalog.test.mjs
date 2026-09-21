@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {countries,stations,places} from '../public/data.js';import {generate,warnings} from '../public/engine.js';
+test('all 16 countries have usable city coordinates and feasible recommendations',()=>{assert.equal(countries.length,16);assert.equal(new Set(countries.map(c=>c.id)).size,16);for(const c of countries){for(const city of c.cities){assert.equal(stations[city].length,2);assert.ok(places.some(p=>p.city===city));const plan=generate({start:'2026-10-12',end:'2026-10-12',cities:[city],fixed:[],visits:[],pace:'normal'});assert.ok(plan[0].items.length>0);assert.deepEqual(plan.flatMap(warnings),[]);}}});

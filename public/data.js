@@ -1,3 +1,4 @@
+import {extraCatalog} from './extra-catalog.js';
 export const countries=[{id:'JP',name:'일본',en:'Japan',lat:36,lng:138,flag:'JP',cities:['도쿄','교토','오사카']},{id:'KR',name:'대한민국',en:'Korea',lat:37,lng:127,flag:'KR',cities:['서울','부산']},{id:'FR',name:'프랑스',en:'France',lat:47,lng:2,flag:'FR',cities:['파리']},{id:'IT',name:'이탈리아',en:'Italy',lat:42,lng:12,flag:'IT',cities:['로마']}];
 export const stations={'도쿄':[35.6812,139.7671],'교토':[34.9858,135.7588],'오사카':[34.7335,135.5003],'서울':[37.5547,126.9707],'부산':[35.1152,129.0414],'파리':[48.8809,2.3553],'로마':[41.901,12.501]};
 const raw={
@@ -8,6 +9,10 @@ const raw={
 '부산':[['해운대',35.158,129.16,90,'산책','해변 산책'],['해운대 시장',35.163,129.163,60,'식사','시장 식당 선택'],['광안리',35.153,129.118,90,'산책','바다와 다리 풍경'],['감천문화마을',35.098,129.01,90,'문화','언덕길 풍경'],['자갈치 시장',35.097,129.03,60,'식사','해산물 식당 선택']],
 '파리':[['루브르 주변',48.8606,2.3376,90,'문화','궁전 외관과 주변 산책'],['튈르리 정원',48.863,2.327,70,'산책','정원에서 쉬어가기'],['레알 식당가',48.862,2.346,60,'식사','비스트로 직접 선택'],['에펠탑 주변',48.8584,2.2945,90,'문화','강변과 탑 풍경'],['생제르맹',48.853,2.333,70,'쇼핑','거리와 편집숍'],['라탱 지구 식당가',48.85,2.345,60,'식사','카페·식당 선택']],
 '로마':[['콜로세움 주변',41.8902,12.4922,90,'문화','고대 유적 외관 산책'],['트레비 분수',41.9009,12.4833,50,'문화','골목 속 분수'],['판테온 주변',41.8986,12.4769,60,'문화','광장과 오래된 거리'],['나보나 광장',41.899,12.473,60,'산책','광장 산책'],['몬티 식당가',41.895,12.491,60,'식사','파스타 식당 선택'],['트라스테베레',41.889,12.47,60,'식사','골목 식당 선택']]};
+for(const [id,name,en,lat,lng,city,clat,clng,rows] of extraCatalog){
+ countries.push({id,name,en,lat,lng,flag:id,cities:[city]});stations[city]=[clat,clng];
+ raw[city]=rows.map(([name,lat,lng,type='산책'])=>[name,lat,lng,type==='식사'?60:75,type,'초기 추천 장소 · 좌표·체류시간은 근삿값, 운영·예약 별도 확인']);
+}
 export const places=Object.entries(raw).flatMap(([city,rows])=>rows.map((r,i)=>({id:city+i,city,name:r[0],lat:r[1],lng:r[2],duration:r[3],type:r[4],note:r[5]})));
 export const sources=[['도쿄 공식 관광안내','https://www.gotokyo.org/en/index.html'],['교토 공식 관광안내','https://kyoto.travel/en/'],['오사카 공식 관광안내','https://osaka-info.jp/en/']];
 
@@ -19,3 +24,13 @@ export const visitPresets=[
  {id:'teamlab-planets',city:'도쿄',name:'팀랩 플래닛 도쿄',lat:35.6491,lng:139.7898,duration:120,type:'예약 방문',note:'도요스 · 예약한 입장 시각을 직접 입력'},
  ...places
 ];
+
+// DB catalog is authoritative when available; bundled data supports offline/static previews.
+export let catalogSource='bundled';
+if(typeof window!=='undefined')try{
+ const response=await fetch('/api/catalog',{signal:AbortSignal.timeout(8000)});
+ if(response.ok){const data=await response.json();
+ if(Array.isArray(data.countries)&&data.countries.length&&data.countries.every(c=>c.id&&Array.isArray(c.cities)&&c.cities.every(city=>Array.isArray(data.stations?.[city])))&&Array.isArray(data.places)&&Array.isArray(data.visitPresets)){
+ countries.splice(0,countries.length,...data.countries);Object.assign(stations,data.stations);places.splice(0,places.length,...data.places);visitPresets.splice(0,visitPresets.length,...data.visitPresets);catalogSource='database';
+ }}
+}catch{}

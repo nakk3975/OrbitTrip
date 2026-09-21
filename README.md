@@ -71,3 +71,9 @@ Node 22 이상. Render 환경변수: `NODE_ENV=production`, `APP_USER`, `APP_PAS
 Neon 프로젝트: `OrbitTrip` (`late-mud-28122960`), Singapore. 런타임 역할은 `orbittrip_app`. `/api/storage`는 연결 설정 유무, `/api/drafts/:country` GET/PUT는 국가별 저장/조회를 제공합니다. DB 비밀번호는 Git에 포함하지 않습니다. 실제 Render 배포는 작업 공간 확인 후 진행합니다.
 
 DB 통합 검증: `node --env-file=.env.local tests/storage.integration.mjs`. 실행 환경에서 DB 호스트로 네트워크 접근이 가능해야 합니다.
+
+## 공개 탐색 및 DB 카탈로그 (2026-09-21)
+
+Render에서 `PUBLIC_ACCESS=true`이면 로그인 없이 국가 검색·지도·추천·브라우저 저장을 이용할 수 있습니다. 기존 서버 일정 API는 계속 인증이 필요하고 비로그인 화면에는 서버 저장 버튼을 표시하지 않습니다. `APP_USER/APP_PASSWORD`는 기존 개인 일정을 보호하기 위해 유지합니다.
+
+Neon `orbittrip.catalog_country`에 16개국·19개 도시·102개 추천 장소를 저장했습니다. `/api/catalog`를 통해 읽으며 서버 캐시 5분을 사용합니다. DB 장애 시 번들 목록으로 대체합니다. 추가 국가: 영국·스페인·독일·스위스·미국·캐나다·호주·뉴질랜드·태국·베트남·싱가포르·대만. 각 추가 국가는 대표 도시 1곳부터 제공합니다. 기준 지점은 도시 좌표이며 실제 역을 의미하지 않습니다. 여행 장소와 시간은 계획용 근삿값입니다. 카탈로그 원본: `data/catalog.json`.

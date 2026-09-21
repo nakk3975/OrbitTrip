@@ -19,3 +19,5 @@ services:
         sync: false
       - key: NODE_VERSION
         value: 22
+      - key: PUBLIC_ACCESS
+        value: "true"

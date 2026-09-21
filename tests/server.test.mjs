@@ -10,3 +10,11 @@ test('production protects assets and API; health remains public',async()=>{
  assert.equal((await fetch('http://localhost:3018/api/drafts/JP',{headers})).status,503);
  }finally{child.kill();}
 });
+test('public access opens pages but cannot expose private drafts',async()=>{
+ const child=spawn(process.execPath,['server.mjs'],{env:{...process.env,PORT:'3019',NODE_ENV:'production',PUBLIC_ACCESS:'true',APP_USER:'test',APP_PASSWORD:'test-secret',DATABASE_URL:''},stdio:['ignore','pipe','pipe']});
+ try{await new Promise((ok,no)=>{child.stdout.once('data',ok);child.once('exit',()=>no(Error('Server exited')));child.once('error',no);});
+ for(const path of ['/','/app.js'])assert.equal((await fetch('http://localhost:3019'+path)).status,200);
+ assert.deepEqual(await(await fetch('http://localhost:3019/api/storage')).json(),{enabled:false});
+ for(const method of ['GET','PUT']){const r=await fetch('http://localhost:3019/api/drafts/JP',{method});assert.equal(r.status,401);assert.equal(r.headers.get('www-authenticate'),null);}
+ }finally{child.kill();}
+});

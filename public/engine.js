@@ -14,7 +14,7 @@ export function routeEstimate(a,b,mode='transit'){
  return {mode,method,minutes,steps,distanceKm:d,source:'offline-estimate',notice:'좌표 거리 기반 추정 · 실제 도로·노선·환승은 API 연결 후 제공'};
 }
 export const travel=(a,b,mode)=>routeEstimate(a,b,mode).minutes;
-export const station=city=>({city,lat:stations[city][0],lng:stations[city][1],name:city+'역'});
+export const station=city=>({city,lat:stations[city][0],lng:stations[city][1],name:city+' 기준 지점'});
 export const isTransport=p=>p.kind==='transport'||(p.locked&&!!p.to);
 export const before=p=>isTransport(p)?30:p.locked&&!p.allDay?(p.buffer??15):0;
 export const after=p=>isTransport(p)?20:0;
