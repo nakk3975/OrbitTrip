@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {gzipSync} from 'node:zlib';
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {timingSafeEqual} from 'node:crypto';
@@ -14,10 +15,10 @@ try{
  const apiPath=new URL(req.url,'http://localhost').pathname;
  if(apiPath.startsWith('/api/')){
   res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json; charset=utf-8');
-  const reply=(status,data)=>{res.writeHead(status);res.end(JSON.stringify(data));};
+  const reply=(status,data)=>{let body=Buffer.from(JSON.stringify(data));if(body.length>2048&&req.headers['accept-encoding']?.includes('gzip')){body=gzipSync(body);res.setHeader('Content-Encoding','gzip');res.setHeader('Vary','Accept-Encoding');}res.writeHead(status);res.end(body);};
   if(apiPath==='/api/catalog'&&req.method==='GET'){
    if(!store){reply(503,{error:'Catalog unavailable'});return;}
-   if(!catalogCache||Date.now()-catalogCachedAt>300000){const rows=await store.catalog();if(!rows.length){reply(503,{error:'Catalog empty'});return;}catalogCache={countries:rows.map(r=>r.country),stations:Object.assign({},...rows.map(r=>r.stations)),places:rows.flatMap(r=>r.places),visitPresets:rows.flatMap(r=>r.visitPresets)};catalogCachedAt=Date.now();}
+   if(!catalogCache||Date.now()-catalogCachedAt>300000){const rows=await store.catalog();if(!rows.length){reply(503,{error:'Catalog empty'});return;}catalogCache={countries:rows.map(r=>r.country),stations:Object.assign({},...rows.map(r=>r.stations)),cityInfo:Object.assign({},...rows.map(r=>r.cityInfo||{})),places:rows.flatMap(r=>r.places),visitPresets:rows.flatMap(r=>r.visitPresets)};catalogCachedAt=Date.now();}
    reply(200,catalogCache);return;
   }
   if(apiPath==='/api/storage'&&req.method==='GET'){reply(200,{enabled:!!store&&(!publicAccess||authenticated)});return;}
@@ -35,4 +36,4 @@ try{
   if(!data.payload||data.payload.country!==country||!Array.isArray(data.payload.plan)||!Number.isSafeInteger(data.revision)||data.revision<0){reply(400,{error:'잘못된 일정 형식입니다.'});return;}
   try{const saved=await store.put(owner,country,data.payload,data.revision);reply(saved?200:409,saved||{error:'서버 일정이 변경됐습니다. 서버에서 불러온 뒤 다시 저장해주세요.'});}catch{reply(503,{error:'서버 저장에 실패했습니다. 브라우저 일정은 유지됩니다.'});}return;
  }
- const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);const file=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));if(!file.startsWith(root+path.sep))throw Error();const body=await readFile(file);const type={'.html':'text/html','.css':'text/css','.js':'text/javascript','.json':'application/json','.png':'image/png'}[path.extname(file)]||'application/octet-stream';res.writeHead(200,{'Content-Type':type+(type.startsWith('image/')?'':'; charset=utf-8'),'Cache-Control':'no-store'});res.end(body);}catch{res.writeHead(req.url.startsWith('/api/')?503:404);res.end('Request failed');}}).listen(port,'0.0.0.0',()=>console.log('OrbitTrip ready on port '+port));
+ const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);const file=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));if(!file.startsWith(root+path.sep))throw Error();let body=await readFile(file);if(body.length>2048&&req.headers['accept-encoding']?.includes('gzip')){body=gzipSync(body);res.setHeader('Content-Encoding','gzip');res.setHeader('Vary','Accept-Encoding');}const type={'.html':'text/html','.css':'text/css','.js':'text/javascript','.json':'application/json','.png':'image/png'}[path.extname(file)]||'application/octet-stream';res.writeHead(200,{'Content-Type':type+(type.startsWith('image/')?'':'; charset=utf-8'),'Cache-Control':'no-store'});res.end(body);}catch{res.writeHead(req.url.startsWith('/api/')?503:404);res.end('Request failed');}}).listen(port,'0.0.0.0',()=>console.log('OrbitTrip ready on port '+port));

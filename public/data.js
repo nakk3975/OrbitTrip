@@ -1,36 +1,14 @@
-import {extraCatalog} from './extra-catalog.js';
-export const countries=[{id:'JP',name:'일본',en:'Japan',lat:36,lng:138,flag:'JP',cities:['도쿄','교토','오사카']},{id:'KR',name:'대한민국',en:'Korea',lat:37,lng:127,flag:'KR',cities:['서울','부산']},{id:'FR',name:'프랑스',en:'France',lat:47,lng:2,flag:'FR',cities:['파리']},{id:'IT',name:'이탈리아',en:'Italy',lat:42,lng:12,flag:'IT',cities:['로마']}];
-export const stations={'도쿄':[35.6812,139.7671],'교토':[34.9858,135.7588],'오사카':[34.7335,135.5003],'서울':[37.5547,126.9707],'부산':[35.1152,129.0414],'파리':[48.8809,2.3553],'로마':[41.901,12.501]};
-const raw={
-'도쿄':[['센소지',35.7148,139.7967,80,'문화','아사쿠사 골목과 사찰 산책'],['스미다 공원',35.712,139.803,50,'산책','강변을 따라 천천히 걷기'],['아사쿠사 먹거리 골목',35.711,139.795,60,'식사','덴푸라·소바 식당을 직접 선택'],['우에노 공원',35.715,139.774,90,'산책','초록이 있는 도심 산책'],['아메요코 시장',35.709,139.774,60,'식사','시장 주변 식당에서 한 끼'],['아키하바라',35.698,139.773,90,'쇼핑','전자상가와 취향 가게'],['메이지 신궁',35.6764,139.6993,90,'문화','숲길과 도심 속 쉼'],['시부야 스크램블',35.6595,139.7005,45,'산책','도쿄의 활기 있는 교차로'],['시부야 식당가',35.66,139.698,60,'식사','라멘·돈부리 식당 선택'],['신주쿠 교엔 주변',35.686,139.71,75,'산책','공원 주변을 여유롭게'],['신주쿠 식당가',35.694,139.701,60,'식사','이자카야·정식 식당 선택'],['오다이바 해변공원',35.629,139.775,90,'산책','도쿄만을 바라보는 산책'],['다이버시티 도쿄',35.625,139.775,80,'쇼핑','쇼핑과 실내 휴식'],['도요스 식당가',35.647,139.789,60,'식사','해산물 식당을 직접 선택'],['긴자',35.671,139.765,80,'쇼핑','거리와 편집숍 탐방']],
-'교토':[['기요미즈데라 주변',34.9949,135.785,90,'문화','언덕길과 전통 풍경'],['산넨자카',34.996,135.781,60,'산책','교토의 오래된 골목'],['기온',35.003,135.778,70,'문화','전통 거리 산책'],['니시키 시장',35.005,135.765,60,'식사','시장 먹거리와 주변 식당'],['후시미 이나리',34.967,135.773,100,'문화','도리이 길 따라 걷기'],['교토역 식당가',34.986,135.758,60,'식사','정식·라멘 식당 선택'],['아라시야마 대나무숲',35.017,135.671,100,'산책','서쪽 교토의 숲길'],['도게츠교',35.013,135.678,50,'산책','강과 산이 만나는 풍경'],['아라시야마 식당가',35.015,135.677,60,'식사','소바·두부 요리 식당 선택'],['가모강',35.009,135.772,60,'산책','강변에서 쉬어가기']],
-'오사카':[['오사카성 공원',34.687,135.526,100,'문화','성곽과 공원 산책'],['도톤보리',34.669,135.502,80,'산책','오사카 중심 거리'],['구로몬 시장',34.665,135.506,60,'식사','시장과 주변 식당'],['신사이바시',34.674,135.501,80,'쇼핑','아케이드 쇼핑'],['우메다',34.703,135.496,80,'쇼핑','북쪽 도심 탐방'],['우메다 식당가',34.702,135.498,60,'식사','오코노미야키 식당 선택']],
-'서울':[['경복궁 주변',37.5796,126.977,90,'문화','궁궐과 광화문 산책'],['북촌',37.582,126.983,60,'산책','조용한 골목 산책'],['인사동 식당가',37.574,126.985,60,'식사','한식 식당 선택'],['청계천',37.569,126.989,60,'산책','물길 따라 걷기'],['광장시장',37.57,126.999,60,'식사','시장 먹거리 탐방'],['명동',37.563,126.985,80,'쇼핑','도심 쇼핑']],
-'부산':[['해운대',35.158,129.16,90,'산책','해변 산책'],['해운대 시장',35.163,129.163,60,'식사','시장 식당 선택'],['광안리',35.153,129.118,90,'산책','바다와 다리 풍경'],['감천문화마을',35.098,129.01,90,'문화','언덕길 풍경'],['자갈치 시장',35.097,129.03,60,'식사','해산물 식당 선택']],
-'파리':[['루브르 주변',48.8606,2.3376,90,'문화','궁전 외관과 주변 산책'],['튈르리 정원',48.863,2.327,70,'산책','정원에서 쉬어가기'],['레알 식당가',48.862,2.346,60,'식사','비스트로 직접 선택'],['에펠탑 주변',48.8584,2.2945,90,'문화','강변과 탑 풍경'],['생제르맹',48.853,2.333,70,'쇼핑','거리와 편집숍'],['라탱 지구 식당가',48.85,2.345,60,'식사','카페·식당 선택']],
-'로마':[['콜로세움 주변',41.8902,12.4922,90,'문화','고대 유적 외관 산책'],['트레비 분수',41.9009,12.4833,50,'문화','골목 속 분수'],['판테온 주변',41.8986,12.4769,60,'문화','광장과 오래된 거리'],['나보나 광장',41.899,12.473,60,'산책','광장 산책'],['몬티 식당가',41.895,12.491,60,'식사','파스타 식당 선택'],['트라스테베레',41.889,12.47,60,'식사','골목 식당 선택']]};
-for(const [id,name,en,lat,lng,city,clat,clng,rows] of extraCatalog){
- countries.push({id,name,en,lat,lng,flag:id,cities:[city]});stations[city]=[clat,clng];
- raw[city]=rows.map(([name,lat,lng,type='산책'])=>[name,lat,lng,type==='식사'?60:75,type,'초기 추천 장소 · 좌표·체류시간은 근삿값, 운영·예약 별도 확인']);
-}
-export const places=Object.entries(raw).flatMap(([city,rows])=>rows.map((r,i)=>({id:city+i,city,name:r[0],lat:r[1],lng:r[2],duration:r[3],type:r[4],note:r[5]})));
-export const sources=[['도쿄 공식 관광안내','https://www.gotokyo.org/en/index.html'],['교토 공식 관광안내','https://kyoto.travel/en/'],['오사카 공식 관광안내','https://osaka-info.jp/en/']];
-
-// Optional fixed-visit presets. Durations and coordinates are planning estimates,
-// not opening hours, ticket availability or live route information.
-export const visitPresets=[
- {id:'tokyo-disneyland',city:'도쿄',name:'도쿄 디즈니랜드',lat:35.6329,lng:139.8804,duration:600,type:'테마파크',note:'하루 전체 일정 추천 · 입장권·운영시간 별도 확인'},
- {id:'kasukabe',city:'도쿄',name:'가스카베 (카스카베)',lat:35.9803,lng:139.7523,duration:120,type:'근교 방문',note:'가스카베역 주변 기준 · 도쿄 출발 근교 일정'},
- {id:'teamlab-planets',city:'도쿄',name:'팀랩 플래닛 도쿄',lat:35.6491,lng:139.7898,duration:120,type:'예약 방문',note:'도요스 · 예약한 입장 시각을 직접 입력'},
- ...places
-];
-
-// DB catalog is authoritative when available; bundled data supports offline/static previews.
+import {expandedCatalog} from './catalog-data.js';
+export const countries=[...expandedCatalog.countries];
+export const stations={...expandedCatalog.stations};
+export const cityInfo={...expandedCatalog.cityInfo};
+export const places=[...expandedCatalog.places];
+export const visitPresets=[...expandedCatalog.visitPresets];
 export let catalogSource='bundled';
 if(typeof window!=='undefined')try{
- const response=await fetch('/api/catalog',{signal:AbortSignal.timeout(8000)});
+ const response=await fetch('/api/catalog',{signal:AbortSignal.timeout(6000)});
  if(response.ok){const data=await response.json();
- if(Array.isArray(data.countries)&&data.countries.length&&data.countries.every(c=>c.id&&Array.isArray(c.cities)&&c.cities.every(city=>Array.isArray(data.stations?.[city])))&&Array.isArray(data.places)&&Array.isArray(data.visitPresets)){
- countries.splice(0,countries.length,...data.countries);Object.assign(stations,data.stations);places.splice(0,places.length,...data.places);visitPresets.splice(0,visitPresets.length,...data.visitPresets);catalogSource='database';
+ if(data.cityInfo&&Array.isArray(data.countries)&&data.countries.length>=countries.length&&data.countries.every(c=>c.id&&Array.isArray(c.cities)&&c.cities.every(city=>Array.isArray(data.stations?.[city])))&&Array.isArray(data.places)&&Array.isArray(data.visitPresets)){
+ countries.splice(0,countries.length,...data.countries);Object.assign(stations,data.stations);Object.assign(cityInfo,data.cityInfo);places.splice(0,places.length,...data.places);visitPresets.splice(0,visitPresets.length,...data.visitPresets);catalogSource='database';
  }}
 }catch{}

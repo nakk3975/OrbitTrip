@@ -1,0 +1,26 @@
+OrbitTrip location catalog attribution
+
+Country/territory names and coordinates: world-countries 5.1.0 / mledoze/countries
+https://github.com/mledoze/countries
+Open Database License 1.0 (ODbL): https://opendatacommons.org/licenses/odbl/1-0/
+Countries include dependent territories and special areas; not all entries are sovereign states.
+
+City names, alternate names, populations, coordinates and administrative names:
+GeoNames, https://www.geonames.org/ (via geonamescache 3.0.2)
+https://download.geonames.org/export/dump/admin1CodesASCII.txt
+Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/
+geonamescache package: https://github.com/yaph/geonamescache (MIT).
+Snapshot obtained 2026-09-21. Up to 50 population-ranked cities per country,
+plus manually curated cities. This is not a complete municipal register.
+Korean names from available alternate names; English names are retained otherwise.
+
+Derived location database: data/catalog.json and public/catalog-data.js.
+Available under ODbL 1.0 with GeoNames attribution retained. Repository:
+https://github.com/nakk3975/OrbitTrip
+Curated POI coordinates, durations and categories are approximate planning data,
+not verified opening hours, availability, restaurant ratings or actual routes.
+Cities with no POI records are explicitly marked as not yet covered.
+Country listing is geographic coverage, not an assertion that every destination
+is currently suitable or accessible for travel.
+
+Base map attribution: see /MAP-LICENSE.txt.
