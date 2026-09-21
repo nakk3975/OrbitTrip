@@ -67,4 +67,4 @@ $('#place-form').onsubmit=e=>{e.preventDefault();try{const start=$('#place-start
 $('#export').onclick=()=>{const blob=new Blob([JSON.stringify({version:2,country:country().name,notice:'계획용 추정치입니다. 영업·예약·운행 정보를 별도 확인하세요.',config:{...state,plan:undefined},plan:state.plan},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='OrbitTrip-'+state.start+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 render();focusGlobe(state.country);
 
-$('.hero-footnote').textContent='국가를 검색하거나 전체 목록에서 다음 여행지를 찾아보세요.';
+$('.hero-footnote').textContent='확대하면 더 많은 국가명이 보여요. 점이 모인 곳을 누르면 주변 국가를 골라볼 수 있습니다.';
