@@ -1,0 +1,2 @@
+export function projectSphere(lng,lat,lon0,lat0){const r=Math.PI/180,a=(lng-lon0)*r,b=lat*r,c=lat0*r;return [Math.cos(b)*Math.sin(a),Math.cos(c)*Math.sin(b)-Math.sin(c)*Math.cos(b)*Math.cos(a),Math.sin(c)*Math.sin(b)+Math.cos(c)*Math.cos(b)*Math.cos(a)];}
+export function unprojectSphere(x,y,lon0,lat0){const rr=x*x+y*y;if(rr>1)return null;const z=Math.sqrt(1-rr),c=lat0*Math.PI/180;const lat=Math.asin(Math.max(-1,Math.min(1,y*Math.cos(c)+z*Math.sin(c))))*180/Math.PI;const lon=lon0+Math.atan2(x,z*Math.cos(c)-y*Math.sin(c))*180/Math.PI;return [((lon+540)%360)-180,lat];}

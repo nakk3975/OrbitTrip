@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {generate,warnings,travel,routeEstimate,station} from '../public/engine.js';
+const config={start:'2026-10-12',end:'2026-10-13',cities:['도쿄','교토'],pace:'normal',fixed:[{id:'train',date:'2026-10-12',start:'13:00',end:'15:15',from:'도쿄',to:'교토',name:'예약 기차'}]};
+test('all modes produce feasible plans and preserve booked train times',()=>{for(const travelMode of ['transit','driving','walking']){const plan=generate({...config,travelMode});assert.deepEqual(plan.flatMap(warnings),[]);assert.ok(plan.every(d=>d.travelMode===travelMode));const train=plan[0].items.find(p=>p.locked);assert.equal(train.start,'13:00');assert.equal(train.end,'15:15');}});
+test('mode switch detects a walk that cannot reach a booking',()=>{const origin=station('도쿄'),destination={...origin,lng:origin.lng+.1,name:'예약',start:'10:00',end:'11:00',locked:true};const day={city:'도쿄',window:{start:'09:00',end:'20:00'},items:[destination],travelMode:'transit'};assert.deepEqual(warnings(day),[]);day.travelMode='walking';assert.ok(warnings(day).length);assert.ok(travel(origin,destination,'walking')>travel(origin,destination,'driving'));assert.equal(routeEstimate(origin,destination).source,'offline-estimate');});

@@ -1,0 +1,21 @@
+# Private app: credentials are supplied through Render environment variables.
+services:
+  - type: web
+    name: orbittrip
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --ignore-scripts
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_USER
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: NODE_VERSION
+        value: 22

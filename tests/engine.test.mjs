@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {dates,generate,warnings,minute} from '../public/engine.js';
+const config=()=>({start:'2026-10-12',end:'2026-10-16',cities:['도쿄','도쿄','도쿄','교토','교토'],pace:'normal',fixed:[{id:'t',date:'2026-10-14',start:'13:00',end:'15:15',from:'도쿄',to:'교토',name:'기차'}]});
+test('inclusive UTC dates and bounds',()=>{assert.equal(dates('2026-12-31','2027-01-02').length,3);assert.throws(()=>dates('2026-10-15','2026-10-12'));assert.throws(()=>dates('2026-10-01','2026-11-01'));});
+test('fixed train preserved, arrival city used, no timing conflicts',()=>{const plan=generate(config());const train=plan[2].items.find(x=>x.locked);assert.equal(train.start,'13:00');assert.equal(train.end,'15:15');assert.ok(plan.flatMap(warnings).length===0,JSON.stringify(plan.flatMap(warnings)));assert.ok(plan[2].items.filter(x=>minute(x.start)>915).every(x=>x.city==='교토'));});
+test('no repeated recommendation across days',()=>{const ps=generate(config()).flatMap(d=>d.items).filter(x=>!x.locked);assert.equal(new Set(ps.map(x=>x.id)).size,ps.length);});
+test('reject overlapping fixed legs',()=>{const c=config();c.fixed.push({id:'x',date:'2026-10-14',start:'14:00',end:'16:00',from:'교토',to:'오사카'});assert.throws(()=>generate(c),/겹칩니다/);});
+test('reject inconsistent cities',()=>{const c=config();c.cities[1]='오사카';assert.throws(()=>generate(c),/전날 도착 도시/);});
+test('editing creates conflict warnings',()=>{const d=generate(config())[0];d.items[1].start=d.items[0].start;assert.ok(warnings(d).length);});
+test('no API or fake fallback when catalog exhausted',()=>{const c={start:'2026-10-01',end:'2026-10-20',cities:Array(20).fill('로마'),fixed:[],pace:'normal'};const p=generate(c);assert.ok(p.some(x=>x.items.length===0));});
+test('invalid and outside trip fixed times rejected',()=>{const c=config();c.fixed[0].date='2026-11-01';assert.throws(()=>generate(c));c.fixed[0].date='2026-10-14';c.fixed[0].end='10:00';assert.throws(()=>generate(c));});

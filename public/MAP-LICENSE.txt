@@ -1,0 +1,6 @@
+Map geometry: Natural Earth 1:110m land, public domain.
+https://www.naturalearthdata.com/about/terms-of-use/
+Topology distributed by world-atlas 2 (ISC license), https://github.com/topojson/world-atlas
+Downloaded from https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json on 2026-09-21.
+The topology is converted to rounded polygon coordinates and a grayscale land mask.
+No third-party map service or runtime CDN calls are used.
