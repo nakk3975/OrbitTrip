@@ -31,8 +31,10 @@ export function createGeo({key=process.env.GEOAPIFY_API_KEY,fetcher=fetch,now=Da
    if(url.pathname==='/api/geo/location'){
     const lat=number(p,'lat',-85,85),lng=number(p,'lng',-180,180),q=(p.get('q')||'').trim(),country=(p.get('country')||'').toLowerCase();
     if(q.length<2||q.length>200||!/^[a-z]{2}$/.test(country))throw fail(400,'검색어와 국가를 확인해주세요.');
-    const data=await upstream('/v1/geocode/search',{text:q,bias:`proximity:${lng},${lat}`,filter:`countrycode:${country}`,limit:'8',lang:'ko',format:'json'});
-    const places=(data.results||[]).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lon)).map(v=>({name:trim(v.name||v.address_line1||v.formatted,120),address:trim(v.formatted,300),lat:v.lat,lng:v.lon}));
+    const kind=p.get('kind')||'address';if(!['address','hotel'].includes(kind))throw fail(400,'검색 방법을 확인해주세요.');
+    const data=kind==='hotel'?await upstream('/v2/places',{categories:'accommodation',name:q,filter:`circle:${lng},${lat},30000`,bias:`proximity:${lng},${lat}`,limit:'20',lang:'ko'},false,2):await upstream('/v1/geocode/search',{text:q,bias:`proximity:${lng},${lat}`,filter:`countrycode:${country}`,limit:'8',lang:'ko',format:'json'});
+    const rows=kind==='hotel'?(data.features||[]).map(f=>f.properties||{}):data.results||[];
+    const places=rows.filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lon)&&(!v.country_code||v.country_code.toLowerCase()===country)).map(v=>({name:trim(v.name||v.address_line1||v.formatted,120),address:trim(v.formatted,300),lat:v.lat,lng:v.lon}));
     reply(200,{places,attribution:'Powered by Geoapify · © OpenStreetMap contributors'});return true;
    }
    if(url.pathname==='/api/geo/places'){
