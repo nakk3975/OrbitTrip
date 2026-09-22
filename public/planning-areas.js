@@ -1,11 +1,11 @@
 // Assign compact areas across the whole trip before ordering visits inside a day.
 // Kept independent of API/network so offline recommendations are deterministic.
-export function allocateAreas(config,days,pool,{distance,anchorsFor,windowFor,minute,isTransport}){
+export function allocateAreas(config,days,pool,{distance,anchorsFor,windowFor,minute,isTransport,logisticsFor}){
  const slots=[];
  for(const [index,date] of days.entries()){
   const anchors=anchorsFor(config,date),window=windowFor(config,date);if(anchors.some(p=>p.allDay))continue;
   let city=config.cities[index],start=minute(window.start);
-  const add=(end,local)=>{const minutes=end-start-local.reduce((n,p)=>n+minute(p.end)-minute(p.start)+15,0);if(minutes>=40)slots.push({date,city,minutes,anchors:local,groups:[],load:0});};
+  const add=(end,local)=>{const minutes=end-start-local.reduce((n,p)=>n+minute(p.end)-minute(p.start)+15,0);if(minutes>=40)slots.push({date,city,minutes,anchors:local,base:logisticsFor(config,date).destination||logisticsFor(config,date).origin,groups:[],load:0});};
   let local=[];for(const a of anchors){if(isTransport(a)){add(minute(a.start)-30,local);city=a.to;start=minute(a.end)+20;local=[];}else local.push(a);}add(minute(window.end),local);
  }
  const groups=[];
@@ -22,7 +22,7 @@ export function allocateAreas(config,days,pool,{distance,anchorsFor,windowFor,mi
  for(const group of groups){const possible=slots.filter(s=>s.city===group.city);const anchored=possible.flatMap(s=>s.anchors.map(a=>({s,d:distance(a,group.center)}))).sort((a,b)=>a.d-b.d);if(anchored[0]?.d<=3.5){group.preferred=anchored[0].s;group.anchorDistance=anchored[0].d;}}
  groups.sort((a,b)=>Number(!!b.preferred)-Number(!!a.preferred)||(a.preferred&&b.preferred?a.anchorDistance-b.anchorDistance:0)||weight(b)-weight(a));
  for(const g of groups){const possible=slots.filter(s=>s.city===g.city);if(!possible.length)continue;
-  const score=s=>s.load/Math.max(1,s.minutes/100)*100+(s.groups.length?Math.min(...s.groups.map(v=>distance(v.center,g.center)))*4:0);
+  const score=s=>distance(s.base,g.center)*5+s.load/Math.max(1,s.minutes/100)*100+(s.groups.length?Math.min(...s.groups.map(v=>distance(v.center,g.center)))*4:0);
   const slot=(g.preferred&&g.preferred.load+Math.min(weight(g),config.pace==='slow'?3:5)<=(config.pace==='slow'?3:5)?g.preferred:null)||[...possible].sort((a,b)=>score(a)-score(b)||days.indexOf(a.date)-days.indexOf(b.date))[0];
   slot.groups.push(g);slot.load+=Math.min(weight(g),config.pace==='slow'?3:5);for(const p of g.points)assignment.set(p.id,slot.date);
  }

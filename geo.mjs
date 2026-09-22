@@ -28,6 +28,13 @@ export function createGeo({key=process.env.GEOAPIFY_API_KEY,fetcher=fetch,now=Da
    if(req.method!=='GET')throw fail(405,'GET 요청만 지원합니다.');
    const p=url.searchParams;
    if(url.pathname==='/api/geo/status'){reply(200,{enabled:!!key,provider:'Geoapify',modes:['driving','walking']});return true;}
+   if(url.pathname==='/api/geo/location'){
+    const lat=number(p,'lat',-85,85),lng=number(p,'lng',-180,180),q=(p.get('q')||'').trim(),country=(p.get('country')||'').toLowerCase();
+    if(q.length<2||q.length>200||!/^[a-z]{2}$/.test(country))throw fail(400,'검색어와 국가를 확인해주세요.');
+    const data=await upstream('/v1/geocode/search',{text:q,bias:`proximity:${lng},${lat}`,filter:`countrycode:${country}`,limit:'8',lang:'ko',format:'json'});
+    const places=(data.results||[]).filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lon)).map(v=>({name:trim(v.name||v.address_line1||v.formatted,120),address:trim(v.formatted,300),lat:v.lat,lng:v.lon}));
+    reply(200,{places,attribution:'Powered by Geoapify · © OpenStreetMap contributors'});return true;
+   }
    if(url.pathname==='/api/geo/places'){
     const lat=number(p,'lat',-85,85),lng=number(p,'lng',-180,180),radius=number(p,'radius',1000,30000),kind=p.get('kind')||'sights',q=(p.get('q')||'').trim();
     const categories={sights:'tourism.sights,tourism.attraction,entertainment.museum',food:'catering.restaurant',cafe:'catering.cafe'};
