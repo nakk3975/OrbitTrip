@@ -21,3 +21,5 @@ services:
         value: 22
       - key: PUBLIC_ACCESS
         value: "true"
+      - key: GEOAPIFY_API_KEY
+        sync: false

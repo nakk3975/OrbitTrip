@@ -10,6 +10,7 @@
     "test:browser": "node tests/browser.cjs"
   },
   "dependencies": {
+    "leaflet": "1.9.4",
     "pg": "^8.23.0"
   },
   "engines": {

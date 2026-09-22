@@ -1,3 +1,4 @@
+import {knownRoute} from './route-cache.js';
 import {places,stations} from './data.js';
 export const minute=s=>{if(!/^\d{2}:\d{2}$/.test(s))return NaN;const [h,m]=s.split(':').map(Number);return h<24&&m<60?h*60+m:NaN;};
 export const clock=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
@@ -7,7 +8,7 @@ export const travelModes={transit:'대중교통',driving:'자동차',walking:'�
 export const normalizeMode=mode=>Object.hasOwn(travelModes,mode)?mode:'transit';
 // Offline estimate boundary: replace this provider with a routing API later.
 export function routeEstimate(a,b,mode='transit'){
- mode=normalizeMode(mode);const d=a&&b?distance(a,b):0;
+ mode=normalizeMode(mode);const live=knownRoute(a,b,mode);if(live)return {...live,method:travelModes[mode],minutes:live.minutes+(mode==='driving'?8:0),notice:live.notice+(mode==='driving'?' · 주차 여유 8분 추가':'')};const d=a&&b?distance(a,b):0;
  const minutes=d<.05?0:Math.ceil((mode==='walking'?d*1.25/4.3*60:mode==='driving'?10+d*1.3/30*60:d<1.2?d/4.3*60:12+d/23*60)/5)*5;
  const method=mode==='transit'&&d<1.2?'가까운 구간 · 도보 연결':travelModes[mode];
  const steps=mode==='walking'?['출발지','도보 이동','도착지']:mode==='driving'?['출발지','차량 이동','주차 후 도보','도착지']:d<1.2?['출발지','도보 이동','도착지']:['출발지','역·정류장까지 도보','철도·버스 이동','목적지까지 도보','도착지'];
@@ -28,7 +29,7 @@ export function validate(config){const days=dates(config.start,config.end);if(co
  const needed=f.allDay?0:travel(pos,f,config.travelMode)+before(f);if(now+needed>start)throw Error(`${date}: ${f.name}까지 이동·대기 시간이 ${now+needed-start}분 부족합니다. 고정 일정 간 간격 또는 활동 시작을 조정해 주세요.`);now=end+after(f);if(now>b)throw Error(`${date}: 도착 후 여유 시간이 활동 종료를 넘습니다. 활동시간을 늘려주세요.`);pos=endPoint(f);if(isTransport(f))city=f.to;}previous=city;}
  return days;}
 export function generate(config){const days=validate(config),used=new Set((config.visits||[]).flatMap(v=>[v.placeId,v.name]).filter(Boolean));return days.map((date,index)=>{const w=windowFor(config,date),anchors=anchorsFor(config,date);let city=config.cities[index],pos=station(city),now=minute(w.start),items=[],count=0,meal=false;const limit=config.pace==='slow'?3:5;
- const fill=(until,target)=>{while(count<limit){const candidates=places.filter(p=>p.city===city&&!used.has(p.id)&&!used.has(p.name)).map(p=>({p,move:travel(pos,p,config.travelMode)})).filter(({p,move})=>now+move+p.duration+(target?travel(p,target,config.travelMode):0)<=until).sort((a,b)=>{const lunch=now>=660&&!meal;const score=x=>x.move+(lunch?(x.p.type==='식사'?0:1000):(x.p.type==='식사'?200:0));return score(a)-score(b);});if(!candidates.length)break;const {p,move}=candidates[0];now+=move;items.push({...p,uid:date+'-'+p.id,start:clock(now),end:clock(now+p.duration),locked:false,kind:'suggestion',move});now+=p.duration;pos=p;used.add(p.id);used.add(p.name);count++;if(p.type==='식사')meal=true;}};
+ const fill=(until,target)=>{while(count<limit){const candidates=[...places,...(config.externalPlaces||[])].filter(p=>p.city===city&&!used.has(p.id)&&!used.has(p.name)).map(p=>({p,move:travel(pos,p,config.travelMode)})).filter(({p,move})=>now+move+p.duration+(target?travel(p,target,config.travelMode):0)<=until).sort((a,b)=>{const lunch=now>=660&&!meal;const score=x=>x.move+(lunch?(x.p.type==='식사'?0:1000):(x.p.type==='식사'?200:0));return score(a)-score(b);});if(!candidates.length)break;const {p,move}=candidates[0];now+=move;items.push({...p,uid:date+'-'+p.id,start:clock(now),end:clock(now+p.duration),locked:false,kind:'suggestion',move});now+=p.duration;pos=p;used.add(p.id);used.add(p.name);count++;if(p.type==='식사')meal=true;}};
  for(const f of anchors){if(!f.allDay)fill(minute(f.start)-before(f),f);items.push({...f,move:f.allDay?0:travel(pos,f,config.travelMode)});now=minute(f.end)+after(f);pos=endPoint(f);if(isTransport(f))city=f.to;}
  fill(minute(w.end),null);const day={date,city:config.cities[index],window:{...w},travelMode:normalizeMode(config.travelMode),items};day.gaps=freeGaps(day);return day;});}
 export function freeGaps(day){const gaps=[];let now=minute(day.window?.start||'09:00'),pos=station(day.city);for(const p of day.items){const needed=p.allDay?0:travel(pos,p,day.travelMode)+before(p),end=minute(p.start)-needed;if(end-now>=30)gaps.push({start:clock(now),end:clock(end),minutes:end-now});now=minute(p.end)+after(p);pos=endPoint(p);}const end=minute(day.window?.end||'20:00');if(end-now>=30)gaps.push({start:clock(now),end:clock(end),minutes:end-now});return gaps;}
