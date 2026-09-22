@@ -32,9 +32,10 @@ export function createGeo({key=process.env.GEOAPIFY_API_KEY,fetcher=fetch,now=Da
     const lat=number(p,'lat',-85,85),lng=number(p,'lng',-180,180),radius=number(p,'radius',1000,30000),kind=p.get('kind')||'sights',q=(p.get('q')||'').trim();
     const categories={sights:'tourism.sights,tourism.attraction,entertainment.museum',food:'catering.restaurant',cafe:'catering.cafe'};
     if(!categories[kind]||q.length>80)throw fail(400,'검색 조건을 확인해주세요.');
-    const args={categories:categories[kind],filter:`circle:${lng},${lat},${radius}`,bias:`proximity:${lng},${lat}`,limit:'20',lang:'ko'};if(q)args.name=q;
+    const recommendations=p.get('recommendations')==='1';
+    const args={categories:recommendations&&kind==='sights'?'tourism.sights,entertainment.museum,entertainment.aquarium,leisure.park':categories[kind],filter:`circle:${lng},${lat},${radius}`,bias:`proximity:${lng},${lat}`,limit:recommendations&&kind==='sights'?'40':'20',lang:'ko'};if(q)args.name=q;
     const data=await upstream('/v2/places',args,false,2);
-    const places=(data.features||[]).map(f=>f.properties||{}).filter(v=>v.name&&Number.isFinite(v.lat)&&Number.isFinite(v.lon)).map(v=>({id:'geo-'+trim(v.place_id,400),name:trim(v.name,120),lat:v.lat,lng:v.lon,address:trim(v.formatted,300),type:kind==='food'?'식사':kind==='cafe'?'카페':'관광',duration:kind==='cafe'?45:60,source:'geoapify',note:'Geoapify / OpenStreetMap · 체류시간은 계획용 제안입니다.'}));
+    const places=(data.features||[]).map(f=>f.properties||{}).filter(v=>v.name&&Number.isFinite(v.lat)&&Number.isFinite(v.lon)&&(!recommendations||!(v.categories||[]).some(c=>c.startsWith('tourism.sights.memorial')))).map(v=>({id:'geo-'+trim(v.place_id,400),name:trim(v.name,120),lat:v.lat,lng:v.lon,address:trim(v.formatted,300),type:kind==='food'?'식사':kind==='cafe'?'카페':'관광',duration:kind==='cafe'?45:60,source:'geoapify',note:'Geoapify / OpenStreetMap · 체류시간은 계획용 제안입니다.'}));
     reply(200,{places,attribution:'Powered by Geoapify · © OpenStreetMap contributors'});return true;
    }
    if(url.pathname==='/api/geo/route'){
