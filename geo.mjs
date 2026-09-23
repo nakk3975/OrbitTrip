@@ -18,7 +18,7 @@ export function createGeo({key=process.env.GEOAPIFY_API_KEY,fetcher=fetch,now=Da
    let value;try{value=binary?Buffer.from(await response.arrayBuffer()):await response.json();}catch{throw fail(502,'지도 응답을 처리하지 못했습니다.');}
    const size=binary?value.length:Buffer.byteLength(JSON.stringify(value));
    if(size>4*1024*1024)throw fail(502,'지도 응답이 너무 큽니다.');
-   if(cached){bytes-=cached.size;cache.delete(id);}while(cache.size&&(bytes+size>32*1024*1024||cache.size>=1000)){const first=cache.keys().next().value;bytes-=cache.get(first).size;cache.delete(first);}
+   const previous=cache.get(id);if(previous){bytes-=previous.size;cache.delete(id);}while(cache.size&&(bytes+size>32*1024*1024||cache.size>=1000)){const first=cache.keys().next().value;bytes-=cache.get(first).size;cache.delete(first);}
    cache.set(id,{value,size,until:now()+(binary?86400000:3600000)});bytes+=size;return value;
   })();pending.set(id,task);try{return await task;}finally{pending.delete(id);}
  }
@@ -32,10 +32,25 @@ export function createGeo({key=process.env.GEOAPIFY_API_KEY,fetcher=fetch,now=Da
     const lat=number(p,'lat',-85,85),lng=number(p,'lng',-180,180),q=(p.get('q')||'').trim(),country=(p.get('country')||'').toLowerCase();
     if(q.length<2||q.length>200||!/^[a-z]{2}$/.test(country))throw fail(400,'검색어와 국가를 확인해주세요.');
     const kind=p.get('kind')||'address';if(!['address','hotel'].includes(kind))throw fail(400,'검색 방법을 확인해주세요.');
-    const data=kind==='hotel'?await upstream('/v2/places',{categories:'accommodation',name:q,filter:`circle:${lng},${lat},30000`,bias:`proximity:${lng},${lat}`,limit:'20',lang:'ko'},false,2):await upstream('/v1/geocode/search',{text:q,bias:`proximity:${lng},${lat}`,filter:`countrycode:${country}`,limit:'8',lang:'ko',format:'json'});
-    const rows=kind==='hotel'?(data.features||[]).map(f=>f.properties||{}):data.results||[];
-    const places=rows.filter(v=>Number.isFinite(v.lat)&&Number.isFinite(v.lon)&&(!v.country_code||v.country_code.toLowerCase()===country)).map(v=>({name:trim(v.name||v.address_line1||v.formatted,120),address:trim(v.formatted,300),lat:v.lat,lng:v.lon}));
-    reply(200,{places,attribution:'Powered by Geoapify · © OpenStreetMap contributors'});return true;
+    let rows=[];
+    const apa=country==='jp'&&/^(apa(?:\s*hotel)?|아파(?:\s*호텔)?|アパホテル)$/i.test(q);
+    const queries=apa?[q,...['APA','アパホテル'].filter(v=>v.toLowerCase()!==q.toLowerCase())]:[q];
+    let partial=false;
+    const responses=await Promise.allSettled((kind==='hotel'?queries:[q]).map(async query=>{
+     const data=kind==='hotel'?await upstream('/v2/places',{categories:'accommodation',name:query,filter:`circle:${lng},${lat},30000`,bias:`proximity:${lng},${lat}`,limit:'20',lang:'ko'},false,2):await upstream('/v1/geocode/search',{text:query,bias:`proximity:${lng},${lat}`,filter:`countrycode:${country}`,limit:'8',lang:'ko',format:'json'});
+     return kind==='hotel'?(data.features||[]).map(f=>f.properties||{}):data.results||[];
+    }));
+    if(responses.every(r=>r.status==='rejected'))throw responses[0].reason;
+    for(const r of responses){if(r.status==='fulfilled')rows.push(...r.value);else partial=true;}
+    const places=[];
+    for(const v of rows){
+     if(!Number.isFinite(v.lat)||!Number.isFinite(v.lon)||Math.abs(v.lat)>85||Math.abs(v.lon)>180||(v.country_code&&v.country_code.toLowerCase()!==country))continue;
+     const name=trim(v.name||v.address_line1||v.formatted,120);
+     if(kind==='hotel'&&apa&&!/(?:^|[^a-z])apa(?:[^a-z]|$)|アパ|아파/i.test(name))continue;
+     if(places.some(p=>Math.abs(p.lat-v.lat)<.0001&&Math.abs(p.lng-v.lon)<.0001))continue;
+     places.push({name,address:trim(v.formatted,300),lat:v.lat,lng:v.lon});
+    }
+    reply(200,{places,...(partial?{notice:'일부 검색만 완료했습니다. 잠시 후 다시 검색해주세요.'}:{}),attribution:'Powered by Geoapify · © OpenStreetMap contributors'});return true;
    }
    if(url.pathname==='/api/geo/places'){
     const lat=number(p,'lat',-85,85),lng=number(p,'lng',-180,180),radius=number(p,'radius',1000,30000),kind=p.get('kind')||'sights',q=(p.get('q')||'').trim();

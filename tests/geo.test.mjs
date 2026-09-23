@@ -13,3 +13,17 @@ test('External candidates are used by the recommendation engine',()=>{const city
 test('location search validates input, uses country bias and sanitizes geocoding output',async()=>{let calls=0;const h=createGeo({key:'secret',fetcher:async url=>{calls++;const u=new URL(url);assert.equal(u.pathname,'/v1/geocode/search');assert.equal(u.searchParams.get('filter'),'countrycode:jp');return {ok:true,json:async()=>({results:[{name:'Hotel',formatted:'Tokyo address',lat:35.7,lon:139.7,raw:'secret'}]})};}});assert.equal((await request(h,'/api/geo/location?lat=35&lng=139&q=x&country=JP')).status,400);const a=await request(h,'/api/geo/location?lat=35&lng=139&q=hotel&country=JP');assert.equal(a.status,200);assert.equal(a.body.places[0].lng,139.7);assert.ok(!JSON.stringify(a).includes('secret'));assert.equal(calls,1);});
 
 test('hotel name search queries accommodations near chosen city and excludes other countries',async()=>{const h=createGeo({key:'secret',fetcher:async url=>{const u=new URL(url);assert.equal(u.pathname,'/v2/places');assert.equal(u.searchParams.get('categories'),'accommodation');assert.equal(u.searchParams.get('name'),'아늑');return {ok:true,json:async()=>({features:[{properties:{name:'아늑 테스트 숙소',lat:37.5,lon:127,country_code:'kr',formatted:'테스트 주소'}},{properties:{name:'다른 국가',lat:37.5,lon:127,country_code:'jp'}}]})};}});const r=await request(h,'/api/geo/location?lat=37.5&lng=127&country=KR&kind=hotel&q='+encodeURIComponent('아늑'));assert.equal(r.status,200);assert.equal(r.body.places.length,1);assert.equal(r.body.places[0].name,'아늑 테스트 숙소');});
+
+test('APA aliases merge local spellings, deduplicate branches, exclude substring matches and cache repeats',async()=>{
+ const calls=[];const h=createGeo({key:'secret',fetcher:async url=>{const q=new URL(url).searchParams.get('name');calls.push(q);const rows=q==='APA'?[{name:'Fare Metallo Japan House',lat:35.69,lon:139.67},{name:'APA ホテル 新宿',lat:35.695,lon:139.70}]:[{name:'アパホテル 新宿',lat:35.695,lon:139.70},{name:'アパホテル 上野',lat:35.71,lon:139.77}];return {ok:true,json:async()=>({features:rows.map(properties=>({properties:{...properties,country_code:'jp'}}))})};}});
+ const path='/api/geo/location?lat=35.69&lng=139.69&country=JP&kind=hotel&q=APA';
+ const r=await request(h,path);assert.equal(r.status,200);assert.equal(r.body.places.length,2);assert.ok(!r.body.places.some(p=>p.name.includes('Japan')));await request(h,path);assert.deepEqual(calls,['APA','アパホテル']);
+});
+test('hotel alias failure keeps successful results and reports partial search',async()=>{
+ const h=createGeo({key:'secret',fetcher:async url=>{if(new URL(url).searchParams.get('name')==='APA')throw Error('unavailable');return {ok:true,json:async()=>({features:[{properties:{name:'アパホテル',lat:35.7,lon:139.7,country_code:'jp'}}]})};}});
+ const r=await request(h,'/api/geo/location?lat=35.69&lng=139.69&country=JP&kind=hotel&q=APA');assert.equal(r.status,200);assert.equal(r.body.places.length,1);assert.ok(r.body.notice);
+});
+test('a fetched zero-distance driving leg does not create phantom parking time',()=>{
+ const a={lat:35.12345,lng:139.12345};rememberRoute(a,a,'driving',{minutes:0,distanceKm:0,notice:'Same location'});assert.equal(travel(a,a,'driving'),0);
+ const b={lat:35.12445,lng:139.12445};rememberRoute(a,b,'driving',{minutes:3,distanceKm:.2,notice:'Driving'});assert.equal(travel(a,b,'driving'),11);
+});

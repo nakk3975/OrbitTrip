@@ -9,7 +9,7 @@ export const travelModes={transit:'대중교통',driving:'자동차',walking:'�
 export const normalizeMode=mode=>Object.hasOwn(travelModes,mode)?mode:'transit';
 // Offline estimate boundary: replace this provider with a routing API later.
 export function routeEstimate(a,b,mode='transit'){
- mode=normalizeMode(mode);const live=knownRoute(a,b,mode);if(live)return {...live,method:travelModes[mode],minutes:live.minutes+(mode==='driving'?8:0),notice:live.notice+(mode==='driving'?' · 주차 여유 8분 추가':'')};const d=a&&b?distance(a,b):0;
+ mode=normalizeMode(mode);const live=knownRoute(a,b,mode);const parking=mode==='driving'&&live?.distanceKm>0?8:0;if(live)return {...live,method:travelModes[mode],minutes:live.minutes+parking,notice:live.notice+(parking?' · 주차 여유 8분 추가':'')};const d=a&&b?distance(a,b):0;
  const minutes=d<.05?0:Math.ceil((mode==='walking'?d*1.25/4.3*60:mode==='driving'?10+d*1.3/30*60:d<1.8?d*1.25/4.3*60:12+d/23*60)/5)*5;
  const method=mode==='transit'&&d<1.8?'가까운 구간 · 도보 연결':travelModes[mode];
  const steps=mode==='walking'?['출발지','도보 이동','도착지']:mode==='driving'?['출발지','차량 이동','주차 후 도보','도착지']:d<1.8?['출발지','도보 이동','도착지']:['출발지','역·정류장까지 도보','철도·버스 이동','목적지까지 도보','도착지'];
