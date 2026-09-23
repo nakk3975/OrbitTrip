@@ -1,5 +1,5 @@
 // Geoapify gateway: fixed upstream endpoints only; keys never leave the server.
-export function createGeo({key=process.env.GEOAPIFY_API_KEY,fetcher=fetch,now=Date.now}={}) {
+export function createGeo({key=process.env.GEOAPIFY_API_KEY,fetcher=fetch,now=Date.now,hotelSearch=null}={}) {
  const cache=new Map(),pending=new Map();let bytes=0,nextSlot=0,day='',spent=0;
  const fail=(status,message)=>Object.assign(new Error(message),{status});
  function number(params,name,min,max){const raw=params.get(name);const n=raw===null||raw.trim()===''?NaN:Number(raw);if(!Number.isFinite(n)||n<min||n>max)throw fail(400,'올바른 위치와 조회 범위를 입력해주세요.');return n;}
@@ -32,6 +32,10 @@ export function createGeo({key=process.env.GEOAPIFY_API_KEY,fetcher=fetch,now=Da
     const lat=number(p,'lat',-85,85),lng=number(p,'lng',-180,180),q=(p.get('q')||'').trim(),country=(p.get('country')||'').toLowerCase();
     if(q.length<2||q.length>200||!/^[a-z]{2}$/.test(country))throw fail(400,'검색어와 국가를 확인해주세요.');
     const kind=p.get('kind')||'address';if(!['address','hotel'].includes(kind))throw fail(400,'검색 방법을 확인해주세요.');
+    if(kind==='hotel'&&hotelSearch){
+     const places=await hotelSearch({q,country,lat,lng});
+     if(places.length){reply(200,{places,attribution:'OrbitTrip 등록 숙소 · 공식 지점 정보 / Geoapify · OpenStreetMap',notice:'등록 숙소 결과입니다. 주소와 예약 내역을 확인해주세요.'});return true;}
+    }
     let rows=[];
     const apa=country==='jp'&&/^(apa(?:\s*hotel)?|아파(?:\s*호텔)?|アパホテル)$/i.test(q);
     const queries=apa?[q,...['APA','アパホテル'].filter(v=>v.toLowerCase()!==q.toLowerCase())]:[q];
