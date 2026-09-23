@@ -35,3 +35,29 @@ label{font-size:15px;color:#c0ccdb}.primary{font-size:16px;min-height:48px}.seco
 @media(max-width:650px){header{height:auto;min-height:90px;flex-wrap:wrap;padding-top:14px;padding-bottom:14px}nav{order:3;flex-basis:100%;justify-content:space-between;gap:12px}nav button{font-size:14px}.planner-foot{padding:16px;gap:12px}.planner-foot .primary{width:100%;margin:0;white-space:normal}.planner-foot>span{font-size:14px}.city-browser-summary{padding:18px;align-items:flex-start;gap:12px}.city-browser-summary strong{font-size:17px}.city-browser-content{padding:0 16px 20px}.anchor-card{flex-wrap:wrap}.anchor-content{min-width:160px!important}.anchor-controls{margin-left:auto}.timeline-card{grid-template-columns:48px minmax(0,1fr);gap:14px}.activity{padding:12px}.activity-top{align-items:flex-start}.day-title .secondary,.anchor-actions .secondary,.itinerary>.section-head>.secondary,.city-apply .primary{font-size:14px}.city-library,.city-place-list{grid-template-columns:repeat(2,minmax(0,1fr))}.geo-search-form .row{flex-wrap:wrap}}
 
 .selected-location{padding:14px;border:1px solid #425942;background:#142019;border-radius:8px;color:#d4e7c8;font-size:15px;overflow-wrap:anywhere}
+
+/* Consistent, readable planning surfaces. */
+[hidden]{display:none!important}
+:root{--muted:#b2bfd0}
+body{line-height:1.7}h2,h3,h4{word-break:keep-all;overflow-wrap:anywhere}
+button,input,select,summary{ -webkit-tap-highlight-color:transparent }
+button{transition:background-color .15s,border-color .15s}button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.secondary{min-height:44px}.text-button{font-size:15px}input::placeholder{color:#93a3b8;opacity:1}
+nav button{min-height:44px;padding:9px 12px;border-radius:9px}nav button.active{background:#c4efb010;box-shadow:inset 0 -2px var(--accent)}
+.hero-copy p{font-size:16px}.hero-footnote{max-width:440px;margin:14px auto;line-height:1.8}
+.coordinate,.orbit-caption,.private{display:none}.destination-picker{width:min(580px,100%)}
+.section-head .eyebrow{display:none}.section-head h2{font-size:clamp(28px,3vw,38px);font-weight:600;letter-spacing:-1px}
+.panel{background:#111a26;border-color:#2b394c;padding:24px}.panel-title{margin-bottom:18px}.panel-title h3{font-weight:600}
+.planner-grid{align-items:start}.anchors-panel .tip{margin-top:24px}.anchor-empty{padding:28px 16px}
+.planner-foot{position:sticky;top:12px;z-index:10;margin:0 0 24px;padding:16px 20px;background:#16251ff5;backdrop-filter:blur(16px);box-shadow:0 8px 26px #0003;gap:16px}
+.trip-overview{min-width:0}.trip-overview strong{display:block;font-size:18px;color:#edf1f7}.trip-overview span{display:block;font-size:14px;color:#b8cabd;margin-top:3px}.planner-foot .primary{flex-shrink:0;gap:12px}
+#form-error{scroll-margin-top:130px}.day-settings{margin-top:20px;border-top:1px solid var(--line)}
+.day-settings summary,.stay-advanced summary{cursor:pointer;min-height:48px;padding:12px 0;color:#dde7f1;font-size:15px;font-weight:600}.day-settings summary span{font-size:13px;color:var(--muted);font-weight:400;margin-left:8px}
+.city-day{padding:16px 0}.city-day .date b{color:var(--accent);font-family:inherit}.day-hours{padding-left:0}.stay-advanced{border-top:1px solid var(--line);margin-top:12px}.stay-advanced[open] summary{margin-bottom:12px}
+.logistics-grid>div{min-width:0}.flight-card{background:#16212e;border:1px solid #2b394c;border-radius:10px;padding:16px;margin:12px 0}.flight-card p{font-size:15px;color:var(--muted)}
+#logistics-form{gap:8px}#logistics-form>label{margin-bottom:8px}.location-results{max-height:260px}.location-results button{background:#172333;border:1px solid #36475b;border-radius:10px;padding:14px}.location-results strong,.location-results span{display:block}.location-results strong{font-size:16px;font-weight:600}.location-results span{font-size:14px;color:var(--muted);margin-top:4px}.location-results button[aria-pressed=true]{border-color:var(--accent);background:#24382d}
+dialog .small-head>button{min-width:44px;min-height:44px;font-size:24px;border:1px solid var(--line);border-radius:9px;background:#1b2939}dialog h2{font-size:25px;letter-spacing:-.7px}dialog::backdrop{background:#020711bb;backdrop-filter:blur(5px)}
+.result-top{gap:16px;flex-wrap:wrap}.day-tabs{padding-bottom:6px;scrollbar-width:thin}.day-tabs button{min-height:48px}.day-tabs button.active{background:#263c2c;color:#dff3d4}
+.route-toolbar{background:#14202d;border-color:#2b394c}.map-panel{border-color:#2b394c}.route-leg summary{font-size:15px}.route-leg summary small{display:block;margin:4px 0 0}.anchor-content h4,.activity h4{line-height:1.5}
+@media(max-width:850px){.planner-grid,.result-grid{grid-template-columns:1fr}.map-panel{position:static}.planner-foot{top:8px}}
+@media(max-width:650px){main{padding:0 16px}.panel{padding:18px}.city-explorer{padding:0}.planner,.itinerary{padding-top:20px}.section-head{margin-bottom:20px}.planner-foot{padding:12px 14px;gap:10px;align-items:stretch}.trip-overview strong{font-size:16px}.trip-overview span{font-size:13px;line-height:1.5}.planner-foot .primary{min-height:44px;padding:10px 14px}.logistics-panel{margin-top:18px}.anchor-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.anchor-actions button{padding:10px 8px;font-size:14px}.row{flex-wrap:wrap}.row>label{min-width:120px}.day-title{gap:12px}.city-browser-summary{padding:18px}.searchbox kbd{display:none}.searchbox input{font-size:16px}.hero-copy{padding-top:26px}.hero-copy h1{font-size:32px;letter-spacing:-1.5px}dialog{max-height:90dvh;padding:18px}#form-error{scroll-margin-top:170px}}
