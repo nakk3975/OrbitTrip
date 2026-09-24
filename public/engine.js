@@ -4,6 +4,7 @@ import {places,stations} from './data.js';
 export const minute=s=>{if(!/^\d{2}:\d{2}$/.test(s))return NaN;const [h,m]=s.split(':').map(Number);return h<24&&m<60?h*60+m:NaN;};
 export const clock=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 export function dates(start,end){const a=Date.parse(start+'T00:00:00Z'),b=Date.parse(end+'T00:00:00Z');if(!Number.isFinite(a)||!Number.isFinite(b)||new Date(a).toISOString().slice(0,10)!==start||new Date(b).toISOString().slice(0,10)!==end||b<a||b-a>89*86400000)throw Error('여행 기간은 올바른 날짜로 1~90일 이내 입력해 주세요.');return Array.from({length:(b-a)/86400000+1},(_,i)=>new Date(a+i*86400000).toISOString().slice(0,10));}
+export function applyArrivalCity(cities,days,date,from,to){const result=[...cities],index=days.indexOf(date);if(index<0)return result;for(let i=index+1;i<days.length&&result[i]===from;i++)result[i]=to;return result;}
 export function distance(a,b){const r=Math.PI/180;const h=Math.sin((b.lat-a.lat)*r/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin((b.lng-a.lng)*r/2)**2;return 6371*2*Math.asin(Math.min(1,Math.sqrt(h)));}
 export const travelModes={transit:'대중교통',driving:'자동차',walking:'도보'};
 export const normalizeMode=mode=>Object.hasOwn(travelModes,mode)?mode:'transit';

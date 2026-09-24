@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {dates,generate,warnings,minute} from '../public/engine.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {dates,applyArrivalCity,generate,warnings,minute} from '../public/engine.js';
 const config=()=>({start:'2026-10-12',end:'2026-10-16',cities:['도쿄','도쿄','도쿄','교토','교토'],pace:'normal',fixed:[{id:'t',date:'2026-10-14',start:'13:00',end:'15:15',from:'도쿄',to:'교토',name:'기차'}]});
 test('inclusive UTC dates and bounds',()=>{assert.equal(dates('2026-12-31','2027-01-02').length,3);assert.throws(()=>dates('2026-10-15','2026-10-12'));assert.equal(dates('2026-10-01','2026-10-31').length,31);assert.equal(dates('2026-10-01','2026-12-29').length,90);assert.throws(()=>dates('2026-10-01','2026-12-30'));});
 test('fixed train preserved, arrival city used, no timing conflicts',()=>{const plan=generate(config());const train=plan[2].items.find(x=>x.locked);assert.equal(train.start,'13:00');assert.equal(train.end,'15:15');assert.ok(plan.flatMap(warnings).length===0,JSON.stringify(plan.flatMap(warnings)));assert.ok(plan[2].items.filter(x=>minute(x.start)>915).every(x=>x.city==='교토'));});
@@ -10,3 +10,5 @@ test('no API or fake fallback when catalog exhausted',()=>{const c={start:'2026-
 test('invalid and outside trip fixed times rejected',()=>{const c=config();c.fixed[0].date='2026-11-01';assert.throws(()=>generate(c));c.fixed[0].date='2026-10-14';c.fixed[0].end='10:00';assert.throws(()=>generate(c));});
 
 test('short and long trips retain every date without duplicate suggestions',()=>{for(const n of [1,2,3,31,90]){const start='2026-10-01',end=new Date(Date.parse(start+'T00:00:00Z')+(n-1)*86400000).toISOString().slice(0,10);const plan=generate({start,end,cities:Array(n).fill('도쿄'),pace:'normal',fixed:[],visits:[]});assert.equal(plan.length,n);assert.equal(plan.at(-1).date,end);const ids=plan.flatMap(d=>d.items.filter(p=>!p.locked).map(p=>p.id));assert.equal(new Set(ids).size,ids.length);}});
+
+test('train arrival updates only following unchanged city days',()=>{const ds=dates('2026-10-12','2026-10-16'),cities=['도쿄','도쿄','도쿄','오사카','도쿄'];const updated=applyArrivalCity(cities,ds,ds[0],'도쿄','교토');assert.deepEqual(updated,['도쿄','교토','교토','오사카','도쿄']);assert.equal(cities[1],'도쿄');assert.deepEqual(applyArrivalCity(cities,ds,'2027-01-01','도쿄','교토'),cities);});
